@@ -2,7 +2,7 @@ import logging
 from sqlalchemy.orm import Session
 from fastapi import HTTPException,status
 from app.core.security import hash_password, verify_password, create_access_token
-from app,repositories.user_repo import UserRepository
+
 
 
 logger=logging.getLogger(__name__)
