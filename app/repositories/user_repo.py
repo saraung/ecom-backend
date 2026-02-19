@@ -9,7 +9,4 @@ class UserRepository:
 
     @staticmethod
     def create(db: Session, user: User):
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        return user
+
