@@ -1,29 +1,22 @@
-import logging
+from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
-from app.core.security import hash_password, verify_password, create_access_token
-from app.repositories.user_repo import UserRepository
 from app.models.user import User
+from app.repositories.user_repo import UserRepository
 
-logger=logging.getLogger(__name__)
-
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class AuthService:
     @staticmethod
-    def register(db:Session,email:str,password:str):
-        logger.info(f"Register attempt: {email}")
-        if UserRepository.get_by_email(db,email):
-            logger.warning(f"Email already registered: {email}")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Email already registered")
-        user=User(email=email,hashed_password=hash_password(password))
-        return UserRepository.create(db,user)
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
+        return pwd_context.verify(plain_password, hashed_password)
+
     @staticmethod
-    def login(db:Session,email:str,password:str)->str:
-        logger.info(f"Login attempt: {email}")
-        user=UserRepository.get_by_email(db,email)
-        logger.debug(f"User fetched: {user is not None}")
-        if not user or not verify_password(password,user.hashed_password):
-            logger.warning("Invalid credentials")
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid email or password")
-        logger.debug("Creating JWT token")
-        return create_access_token({"sub":user.email})
+    def hash_password(password: str) -> str:
+        return pwd_context.hash(password)
+
+    @staticmethod
+    def authenticate_user(db: Session, email: str, password: str) -> User:
+        user = UserRepository.get_user_by_email(db, email)
+        if user and AuthService.verify_password(password, user.hashed_password):
+            return user
+        return None
