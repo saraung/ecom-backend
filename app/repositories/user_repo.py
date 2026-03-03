@@ -1,21 +1,27 @@
 from sqlalchemy.orm import Session
+
 from app.models.user import User, UserProfile
 from app.schemas.user import UserCreate, UserUpdate
 
+
 class UserRepository:
     @staticmethod
-    def get_user_by_id(db: Session, user_id: int) -> User:
+    def get_user_by_id(db: Session, user_id: int) -> User | None:
         return db.query(User).filter(User.id == user_id).first()
 
     @staticmethod
-    def get_user_by_email(db: Session, email: str) -> User:
+    def get_user_by_email(db: Session, email: str) -> User | None:
         return db.query(User).filter(User.email == email).first()
+
+    @staticmethod
+    def get_all_users(db: Session, skip: int = 0, limit: int = 20) -> list[User]:
+        return db.query(User).offset(skip).limit(limit).all()
 
     @staticmethod
     def create_user(db: Session, user_data: UserCreate) -> User:
         db_user = User(
             email=user_data.email,
-            hashed_password=user_data.password,  # Hash the password before saving
+            hashed_password=user_data.password,  # already hashed by service layer
             is_active=user_data.is_active,
             is_superuser=user_data.is_superuser,
         )
@@ -26,7 +32,8 @@ class UserRepository:
 
     @staticmethod
     def update_user(db: Session, user: User, user_data: UserUpdate) -> User:
-        for key, value in user_data.dict(exclude_unset=True).items():
+        update_data = user_data.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
             setattr(user, key, value)
         db.commit()
         db.refresh(user)
@@ -37,9 +44,10 @@ class UserRepository:
         db.delete(user)
         db.commit()
 
+
 class UserProfileRepository:
     @staticmethod
-    def get_profile_by_user_id(db: Session, user_id: int) -> UserProfile:
+    def get_profile_by_user_id(db: Session, user_id: int) -> UserProfile | None:
         return db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
 
     @staticmethod
