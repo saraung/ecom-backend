@@ -44,3 +44,25 @@ def test_login_invalid(client):
         data={"username": "nobody@test.com", "password": "wrong"},
     )
     assert resp.status_code == 401
+
+
+def test_me_endpoint(client):
+    """GET /auth/me returns the current user."""
+    client.post(
+        "/auth/register",
+        json={"email": "me@test.com", "password": "secret123"},
+    )
+    login_resp = client.post(
+        "/auth/login",
+        data={"username": "me@test.com", "password": "secret123"},
+    )
+    token = login_resp.json()["access_token"]
+    resp = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    assert resp.json()["email"] == "me@test.com"
+
+
+def test_me_unauthorized(client):
+    """GET /auth/me without token returns 401."""
+    resp = client.get("/auth/me")
+    assert resp.status_code == 401
