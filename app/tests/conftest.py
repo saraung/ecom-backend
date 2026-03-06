@@ -63,3 +63,39 @@ def client(db):
         yield c
 
     fastapi_app.dependency_overrides.clear()
+
+
+# ── Auth helpers ────────────────────────────────────────────────────
+
+
+def _register_and_login(client, email: str, password: str = "secret123"):
+    """Register a user and login, returning the auth header dict."""
+    client.post("/auth/register", json={"email": email, "password": password})
+    resp = client.post("/auth/login", data={"username": email, "password": password})
+    token = resp.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+def _make_superuser(db, email: str):
+    """Promote a user to superuser directly in the DB."""
+    from app.models.user import User
+
+    user = db.query(User).filter(User.email == email).first()
+    user.is_superuser = True
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture()
+def auth_headers(client):
+    """Register + login a normal user; return auth headers."""
+    return _register_and_login(client, "testuser@test.com")
+
+
+@pytest.fixture()
+def admin_headers(client, db):
+    """Register + login a superuser; return auth headers."""
+    headers = _register_and_login(client, "admin@test.com")
+    _make_superuser(db, "admin@test.com")
+    return headers
