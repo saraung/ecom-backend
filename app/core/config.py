@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     APP_NAME: str = "Footy Connects"
-    DEBUG: bool = True
+    DEBUG: bool = False
     DATABASE_URL: str
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
