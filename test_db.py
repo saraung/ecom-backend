@@ -1,8 +1,9 @@
-import traceback
+import sys
 try:
     from app.core.database import engine
     conn = engine.connect()
     print("DB connected OK")
     conn.close()
 except Exception as e:
-    traceback.print_exc()
+    with open("err.txt", "w") as f:
+        f.write(str(getattr(e, 'orig', e)))
