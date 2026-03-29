@@ -84,6 +84,39 @@ def update_user(
     return user
 
 
+@router.patch("/{user_id}", response_model=UserResponse)
+def patch_user(
+    user_id: int,
+    user_data: UserUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Partially update a user (only provided fields are changed). Regular users can only update themselves."""
+    if not current_user.is_superuser and current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowed to update other users",
+        )
+    # Prevent non-superusers from escalating privileges
+    if not current_user.is_superuser:
+        if user_data.is_superuser is not None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot modify superuser status",
+            )
+        if user_data.is_active is not None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot modify active status",
+            )
+    user = UserService.update_user(db, user_id, user_data)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    return user
+
+
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: int,

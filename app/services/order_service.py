@@ -66,6 +66,19 @@ class OrderService:
         return OrderRepository.get_order_by_id(db, order_id)
 
     @staticmethod
+    def get_all_orders(
+        db: Session, skip: int = 0, limit: int = 50
+    ) -> list[Order]:
+        return OrderRepository.get_all_orders(db, skip=skip, limit=limit)
+
+    @staticmethod
+    def update_order_status(db: Session, order_id: int, new_status: str) -> Order | None:
+        order = OrderRepository.get_order_by_id(db, order_id)
+        if not order:
+            return None
+        return OrderRepository.update_order_status(db, order, new_status)
+
+    @staticmethod
     def get_orders_by_user(
         db: Session, user_id: int, skip: int = 0, limit: int = 10
     ) -> list[Order]:

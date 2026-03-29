@@ -36,6 +36,25 @@ class OrderRepository:
         return db_order
 
     @staticmethod
+    def get_all_orders(
+        db: Session, skip: int = 0, limit: int = 50
+    ) -> list[Order]:
+        return (
+            db.query(Order)
+            .order_by(Order.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    @staticmethod
+    def update_order_status(db: Session, order: Order, new_status: str) -> Order:
+        order.status = new_status
+        db.commit()
+        db.refresh(order)
+        return order
+
+    @staticmethod
     def delete_order(db: Session, order: Order) -> None:
         db.delete(order)
         db.commit()

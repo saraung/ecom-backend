@@ -1,13 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.schemas.order import OrderCreate, OrderResponse
+from app.schemas.order import OrderCreate, OrderResponse, OrderStatusUpdate
 from app.services.order_service import OrderService
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, get_current_superuser
 from app.models.user import User
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
+
+
+@router.get("/", response_model=list[OrderResponse])
+def list_all_orders(
+    skip: int = 0,
+    limit: int = 50,
+    current_user: User = Depends(get_current_superuser),
+    db: Session = Depends(get_db),
+):
+    """List all orders across all users (superuser only)."""
+    return OrderService.get_all_orders(db, skip=skip, limit=limit)
 
 
 @router.post("/", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
@@ -36,6 +47,22 @@ def get_order(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not allowed to view this order",
+        )
+    return order
+
+
+@router.patch("/{order_id}", response_model=OrderResponse)
+def update_order_status(
+    order_id: int,
+    body: OrderStatusUpdate,
+    current_user: User = Depends(get_current_superuser),
+    db: Session = Depends(get_db),
+):
+    """Update an order's status (superuser only)."""
+    order = OrderService.update_order_status(db, order_id, body.status)
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
         )
     return order
 
