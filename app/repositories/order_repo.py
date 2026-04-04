@@ -23,12 +23,27 @@ class OrderRepository:
 
     @staticmethod
     def create_order(
-        db: Session, user_id: int, total_amount: float, status: str = "pending"
+        db: Session,
+        user_id: int,
+        total_amount: float,
+        status: str = "pending",
+        address_line1: str | None = None,
+        address_line2: str | None = None,
+        city: str | None = None,
+        state: str | None = None,
+        pincode: str | None = None,
+        country: str | None = "India",
     ) -> Order:
         db_order = Order(
             user_id=user_id,
             total_amount=total_amount,
             status=status,
+            address_line1=address_line1,
+            address_line2=address_line2,
+            city=city,
+            state=state,
+            pincode=pincode,
+            country=country,
         )
         db.add(db_order)
         db.commit()

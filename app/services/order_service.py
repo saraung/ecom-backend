@@ -37,11 +37,18 @@ class OrderService:
             )
 
         # Create the order
+        addr = order_data.shipping_address
         db_order = OrderRepository.create_order(
             db,
             user_id=user_id,
             total_amount=total_amount,
             status=order_data.status or "pending",
+            address_line1=addr.address_line1,
+            address_line2=addr.address_line2,
+            city=addr.city,
+            state=addr.state,
+            pincode=addr.pincode,
+            country=addr.country,
         )
 
         # Create order items and decrement stock
