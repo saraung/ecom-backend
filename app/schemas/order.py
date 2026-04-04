@@ -1,8 +1,17 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Literal, Optional
 from datetime import datetime
 
 OrderStatus = Literal["pending", "processing", "shipped", "delivered", "cancelled"]
+
+
+class ShippingAddress(BaseModel):
+    address_line1: str = Field(..., min_length=3, description="Street address")
+    address_line2: Optional[str] = None
+    city: str = Field(..., min_length=2)
+    state: str = Field(..., min_length=2)
+    pincode: str = Field(..., pattern=r"^[1-9][0-9]{5}$", description="6-digit Indian pincode")
+    country: str = Field(default="India")
 
 
 class OrderStatusUpdate(BaseModel):
@@ -44,6 +53,7 @@ class OrderBase(BaseModel):
 
 class OrderCreate(OrderBase):
     items: List[OrderItemCreate]
+    shipping_address: ShippingAddress
 
 
 class OrderResponse(OrderBase):
@@ -53,5 +63,12 @@ class OrderResponse(OrderBase):
     items: List[OrderItemResponse]
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    # Shipping address fields
+    address_line1: Optional[str] = None
+    address_line2: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+    country: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
